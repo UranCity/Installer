@@ -1,0 +1,31 @@
+{
+  "name": "urancity_installer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "pkg -t node12-win-x64 ."
+  },
+  "author": "ValentinKhmer",
+  "license": "MIT",
+  "pkg": {
+    "scripts": "index.js",
+    "assets": [
+      "profile.json"
+    ],
+    "targets": [
+      "node12-linux-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "cli-progress": "^3.9.1",
+    "mv": "^2.1.1",
+    "nodejs-file-downloader": "^4.7.4",
+    "unzipper": "^0.10.11"
+  },
+  "devDependencies": {}
+}
