@@ -9,9 +9,9 @@
 
 # Installation
 
- - Télécharger la [dernière version de l'installateur](https://github.com/ValentinKhmer/UranCity-v2_Installer/releases/latest)
- - Exécuter le programme en **mode administrateur**
- - Attendre la fin de l'installation
- - Installer [`Forge-1.16.5-36.2.4`](https://maven.minecraftforge.net/net/minecraftforge/forge/1.16.5-36.2.4/forge-1.16.5-36.2.4-installer.jar)*
+- Télécharger la [dernière version de l'installateur](https://github.com/ValentinKhmer/UranCity-v2_Installer/releases/latest)
+- Exécuter le programme en **mode administrateur**
+- Attendre la fin de l'installation
+- Installer [`Forge-1.16.5-36.2.4`](https://maven.minecraftforge.net/net/minecraftforge/forge/1.16.5-36.2.4/forge-1.16.5-36.2.4-installer.jar)\*
 
-**Téléchargé sur  le "Bureau" par défaut après l'installation*
+\*_Téléchargé sur le "Bureau" par défaut après l'installation_
