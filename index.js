@@ -1,11 +1,12 @@
-const profile = require("./profile.json"),
-	bar = require("cli-progress"),
-	chalk = require("chalk"),
-	path = require("path"),
+const mv = require("mv"),
 	fs = require("fs"),
+	path = require("path"),
+	chalk = require("chalk"),
+	request = require("request"),
+	bar = require("cli-progress"),
 	unzipper = require("unzipper"),
-	Downloader = require("nodejs-file-downloader"),
-	mv = require("mv");
+	profile = require("./profile.json"),
+	Downloader = require("nodejs-file-downloader");
 
 //* Title Screen
 console.log(
@@ -23,28 +24,53 @@ console.log(
                                                                           ░░░░░░   \n\
 \n`) + ` Développé par ${chalk.hex("#5271FF")("ValentinKhmer")}\n`
 );
-// console.log(profiles);
 
 (async function () {
+	console.log(" Préparation de l'installation...");
+
 	const downloadPath = path.join(process.env.USERPROFILE, "/downloads"),
 		urancityPath = path.join(process.env.APPDATA, ".uranciy"),
 		urancityTempPath = path.join(process.env.APPDATA, ".uranciy-save"),
-		toSave = [
-			// Folders
-			"resourcepacks",
-			"saves",
-			"schematics",
-			"screenshots",
-			"shaderpacks",
-			"XaeroWaypoints",
 
-			// Files
-			"options.txt",
-			"optionsof.txt",
-			"usercache.json",
-			"usernamecache.json",
-		],
-		wait = () => new Promise((resolve) => setTimeout(resolve, 1000));
+
+	//* Check if last version
+	const lastVersion = request(
+		{
+			method: "GET",
+			url: "https://raw.githubusercontent.com/UranCity/Client/main/VERSION"
+		},
+		function (error, response) {
+			if (error)
+				throw new Error(error);
+			return response.body;
+		}
+	);
+	const currentVersion = fs.readFileSync(path.join(urancityPath, "VERSION"));
+
+	if (lastVersion !== currentVersion) return console.log(" Vous possédez déjà la dernière version du client !");
+
+
+	//* Define the list of files/folders to save
+	const toSave = [
+		// Folders
+		"resourcepacks",
+		"saves",
+		"schematics",
+		"screenshots",
+		"shaderpacks",
+		"XaeroWaypoints",
+
+		// Files
+		"options.txt",
+		"optionsof.txt",
+		"usercache.json",
+		"usernamecache.json",
+	],
+
+
+	//* Add a interlude between steps
+	wait = (ms) =>
+		new Promise((resolve) => setTimeout(resolve, ms ? ms : 1000));
 
 	const cliBar = new bar.SingleBar({
 		format: " Progression |" + chalk.blue("{bar}") + "| {percentage}%",
@@ -56,13 +82,14 @@ console.log(
 		hideCursor: true,
 	});
 
-	console.log(" Téléchargement des fichiers...");
 
+	console.log(" Téléchargement des fichiers...");
 	cliBar.start(100, 0);
 
+	//* Download client zip file
 	let fileName = "";
 	const download = new Downloader({
-		url: "https://github.com/ZJONSSON/node-unzipper/archive/refs/heads/master.zip",
+		url: "https://github.com/UranCity/Client/archive/refs/heads/main.zip",
 		directory: downloadPath,
 		onProgress: function (percentage) {
 			cliBar.update(percentage);
@@ -78,17 +105,16 @@ console.log(
 	});
 
 	try {
+		console.log(
+			chalk.red(
+				`\n⚠ NE TOUCHEZ PAS AU FICHIER "${path.join(downloadPath, fileName)}" !`
+			)
+		);
 		await download.download();
 		cliBar.update(100);
 	} catch (err) {
 		error(err);
-	}
-
-	console.log(
-		chalk.red(
-			`\n⚠ NE TOUCHER PAS AU FICHIER "${path.join(downloadPath, fileName)}" !`
-		)
-	);
+	};
 	await wait();
 
 	if (fs.existsSync(urancityPath)) {
@@ -108,7 +134,7 @@ console.log(
 					}
 				);
 				cliBar.update(Math.round((e / toSave.length) * 100));
-			}
+			};
 			fs.rmdir(urancityPath);
 			cliBar.update(100);
 
@@ -122,7 +148,7 @@ console.log(
 	cliBar.start(100, 0);
 	fs.createReadStream(path.join(downloadPath, fileName)).pipe(
 		unzipper.Extract({
-			path: /* urancityPath */ path.join(process.env.USERPROFILE, "Desktop"),
+			path: urancityPath,
 		})
 	);
 	cliBar.update(100);
@@ -138,9 +164,9 @@ console.log(
 		);
 	} catch (err) {
 		error(err);
-	}
-	cliBar.update(100);
+	};
 
+	cliBar.update(100);
 	await wait();
 
 	if (fs.existsSync(urancityTempPath)) {
@@ -163,8 +189,8 @@ console.log(
 			cliBar.update(100);
 		} catch (err) {
 			error(err);
-		}
-	}
+		};
+	};
 
 	console.log("\n Installation du profile...");
 
@@ -172,12 +198,12 @@ console.log(
 	try {
 		let existJson = false;
 		const jsonFilesPath = [
-			path.join(process.env.APPDATA, ".minecraft", "launcher_profiles.json"), // Launcher Mojang
+			path.join(process.env.APPDATA, ".minecraft", "launcher_profiles.json"), // Launcher Mojang (old)
 			path.join(
 				process.env.APPDATA,
 				".minecraft",
 				"launcher_profiles_microsoft_store.json"
-			), // Launcher Microsoft
+			), // Launcher Microsoft (new)
 		];
 
 		for (let y; y < jsonFilesPath.length; y++) {
@@ -200,7 +226,7 @@ console.log(
 		cliBar.update(100);
 	} catch (err) {
 		error(err);
-	}
+	};
 
 	setTimeout(function () {
 		console.log(" ");
@@ -211,4 +237,4 @@ console.log(
 function error(err) {
 	console.error(` \n ` + err);
 	process.exit();
-}
+};

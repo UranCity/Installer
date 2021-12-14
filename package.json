@@ -1,9 +1,11 @@
 {
   "name": "urancity_installer",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "<h1 align=\"center\">\r \t<br>\r \t<img width=\"200\" src=\"https://media.discordapp.net/attachments/436193558932750336/911915598127169546/logo.png\" alt=\"UranCity\">\r \t<h3 align=\"center\"> Client d'UranCity </h3>\r \t  </h1>\r <p align=\"center\"> <a href=\"https://www.javascript.com/\"><img src=\"https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=000\" alt=\"JavaScript\"></a>\r <a title=\"Disponible sous Windows\"><img src=\"https://badgen.net/badge/icon/Windows?icon=windows&label\"></a>\r   <br>",
   "main": "index.js",
-  "bin": "index.js",
+  "bin": {
+    "urancity_installer": "index.js"
+  },
   "scripts": {
     "start": "node index.js",
     "build": "pkg -t node12-win-x64 ."
@@ -18,7 +20,7 @@
     "targets": [
       "node12-linux-x64"
     ],
-    "outputPath": "dist"
+    "outputPath": "../installer"
   },
   "dependencies": {
     "chalk": "^4.1.2",
@@ -27,5 +29,13 @@
     "nodejs-file-downloader": "^4.7.4",
     "unzipper": "^0.10.11"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UranCity/Installer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/UranCity/Installer/issues"
+  },
+  "homepage": "https://github.com/UranCity/Installer#readme"
 }
