@@ -15,6 +15,5 @@
 # Installation
 
 - Télécharger la [dernière version de l'installateur](https://github.com/ValentinKhmer/UranCity-v2_Installer/releases/latest)
-- Exécuter le programme en **mode administrateur**
 - Attendre la fin de l'installation 
 - Installer [![](https://img.shields.io/badge/-1.16.5--36.2.4-_?label=Forge&logo=curseforge&logoColor=FFFFFF&color=DFA86A&style=flat-square&labelColor=2E4460)](https://maven.minecraftforge.net/net/minecraftforge/forge/1.16.5-36.2.4/forge-1.16.5-36.2.4-installer.jar)\*
