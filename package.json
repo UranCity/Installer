@@ -25,8 +25,8 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "cli-progress": "^3.9.1",
-    "mv": "^2.1.1",
     "nodejs-file-downloader": "^4.7.4",
+    "request": "^2.88.2",
     "unzipper": "^0.10.11"
   },
   "devDependencies": {},

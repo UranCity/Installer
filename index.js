@@ -1,16 +1,17 @@
-const mv = require("mv"),
-	fs = require("fs"),
+const fs = require("fs"),
 	path = require("path"),
 	chalk = require("chalk"),
 	request = require("request"),
 	bar = require("cli-progress"),
 	unzipper = require("unzipper"),
+	readline = require("readline"),
+	toSave = require("./save.json"),
 	profile = require("./profile.json"),
 	Downloader = require("nodejs-file-downloader");
 
 //* Title Screen
 console.log(
-	chalk.cyan(`\n\
+	chalk.hex("#3FFEFE")(`\n\
        █████  █████                              █████████  ███  █████             \n\
       ░░███  ░░███                              ███░░░░░███░░░  ░░███              \n\
        ░███   ░███ ████████  ██████  ████████  ███     ░░░ ████ ███████  █████ ████\n\
@@ -25,55 +26,43 @@ console.log(
 \n`) + ` Développé par ${chalk.hex("#5271FF")("ValentinKhmer")}\n`
 );
 
+const rl = readline.createInterface(process.stdin, process.stdout);
+
 (async function () {
-	console.log(" Préparation de l'installation...");
+	console.log(chalk.bold(" Préparation de l'installation..."));
 
 	const downloadPath = path.join(process.env.USERPROFILE, "/downloads"),
-		urancityPath = path.join(process.env.APPDATA, ".uranciy"),
-		urancityTempPath = path.join(process.env.APPDATA, ".uranciy-save"),
-
+		urancityPath = path.join(process.env.APPDATA, ".urancity"),
+		urancityTempPath = path.join(process.env.APPDATA, ".uranciy-save");
 
 	//* Check if last version
 	const lastVersion = request(
 		{
 			method: "GET",
-			url: "https://raw.githubusercontent.com/UranCity/Client/main/VERSION"
+			url: "https://raw.githubusercontent.com/UranCity/Client/main/VERSION",
 		},
 		function (error, response) {
-			if (error)
-				throw new Error(error);
+			if (error) throw new Error(error);
 			return response.body;
 		}
 	);
-	const currentVersion = fs.readFileSync(path.join(urancityPath, "VERSION"));
 
-	if (lastVersion !== currentVersion) return console.log(" Vous possédez déjà la dernière version du client !");
+	async function currentVersion() {
+		if (fs.existsSync(path.join(urancityPath, "VERSION"))) {
+			return await fs.readFileSync(path.join(urancityPath, "VERSION"));
+		} else return "";
+	}
 
-
-	//* Define the list of files/folders to save
-	const toSave = [
-		// Folders
-		"resourcepacks",
-		"saves",
-		"schematics",
-		"screenshots",
-		"shaderpacks",
-		"XaeroWaypoints",
-
-		// Files
-		"options.txt",
-		"optionsof.txt",
-		"usercache.json",
-		"usernamecache.json",
-	],
-
+	if (lastVersion === currentVersion)
+		return console.log(" Vous possédez déjà la dernière version du client !");
 
 	//* Add a interlude between steps
-	wait = (ms) =>
+	const wait = (ms) =>
 		new Promise((resolve) => setTimeout(resolve, ms ? ms : 1000));
 
 	const cliBar = new bar.SingleBar({
-		format: " Progression |" + chalk.blue("{bar}") + "| {percentage}%",
+		format:
+			" Progression |" + chalk.hex("#3FFEFE")("{bar}") + "| {percentage}%",
 		stopOnComplete: true,
 		clearOnComplete: false,
 		cloneFiles: false,
@@ -82,8 +71,7 @@ console.log(
 		hideCursor: true,
 	});
 
-
-	console.log(" Téléchargement des fichiers...");
+	console.log(chalk.bold("\n Téléchargement des fichiers..."));
 	cliBar.start(100, 0);
 
 	//* Download client zip file
@@ -105,37 +93,35 @@ console.log(
 	});
 
 	try {
-		console.log(
-			chalk.red(
-				`\n⚠ NE TOUCHEZ PAS AU FICHIER "${path.join(downloadPath, fileName)}" !`
-			)
-		);
 		await download.download();
 		cliBar.update(100);
 	} catch (err) {
 		error(err);
-	};
+	}
 	await wait();
 
 	if (fs.existsSync(urancityPath)) {
-		console.log("\n Sauvegarde des fichiers personnels...");
+		console.log(chalk.bold("\n Sauvegarde des fichiers personnels..."));
 
 		cliBar.start(100, 0);
 		try {
-			fs.mkdir(urancityTempPath);
+			if (!fs.existsSync(urancityTempPath)) {
+				fs.mkdir(urancityTempPath, (err) => {
+					if (err) return error(err);
+				});
+			}
 
 			for (let e = 0; e < toSave.length; e++) {
-				mv(
-					path.join(urancityPath, toSave[e]),
-					path.join(urancityTempPath, toSave[e]),
-					{ mkdirp: true },
-					function (err) {
-						return error(err);
-					}
-				);
+				if (fs.existsSync(path.join(urancityPath, toSave[e]))) {
+					fs.renameSync(
+						path.join(urancityPath, toSave[e]),
+						path.join(urancityTempPath, toSave[e])
+					);
+				}
 				cliBar.update(Math.round((e / toSave.length) * 100));
-			};
-			fs.rmdir(urancityPath);
+			}
+			await wait();
+			fs.rmdirSync(urancityPath, { recursive: true, force: true });
 			cliBar.update(100);
 
 			wait();
@@ -144,97 +130,95 @@ console.log(
 		}
 	}
 
-	console.log("\n Extraction des fichiers...");
+	console.log(chalk.bold("\n Extraction des fichiers..."));
 	cliBar.start(100, 0);
 	fs.createReadStream(path.join(downloadPath, fileName)).pipe(
 		unzipper.Extract({
-			path: urancityPath,
+			path: process.env.APPDATA,
 		})
 	);
-	cliBar.update(100);
 
+	cliBar.update(50);
 	await wait();
 
-	console.log("\n Renommage du dossier principal...");
-	cliBar.start(100, 0);
-	try {
-		fs.renameSync(
-			path.join(process.env.APPDATA, fileName.split(".")[0]),
-			urancityPath
-		);
-	} catch (err) {
-		error(err);
-	};
+	fs.renameSync(
+		path.join(process.env.APPDATA, fileName.split(".")[0]),
+		urancityPath
+	);
 
 	cliBar.update(100);
 	await wait();
 
 	if (fs.existsSync(urancityTempPath)) {
-		console.log("\n Importation de la sauvegarde...");
+		console.log(chalk.bold("\n Importation de la sauvegarde..."));
 
 		cliBar.start(100, 0);
 		try {
-			for (let a = 0; a < toSave.length; a++) {
-				mv(
-					path.join(urancityTempPath, toSave[a]),
-					path.join(urancityPath, toSave[a]),
-					{ mkdirp: true },
-					function (err) {
-						return error(err);
-					}
+			await fs.readdirSync(urancityTempPath).forEach((file) => {
+				fs.renameSync(
+					path.join(urancityTempPath, file),
+					path.join(urancityPath, file)
 				);
-				cliBar.update(Math.round((a / toSave.length) * 100));
-			}
-			fs.rmdir(urancityTempPath);
+			});
+			fs.rmdirSync(urancityTempPath, { recursive: true, force: true });
 			cliBar.update(100);
 		} catch (err) {
 			error(err);
-		};
-	};
+		}
+	}
 
-	console.log("\n Installation du profile...");
+	console.log(chalk.bold("\n Installation du profile..."));
 
 	cliBar.start(100, 0);
 	try {
 		let existJson = false;
-		const jsonFilesPath = [
-			path.join(process.env.APPDATA, ".minecraft", "launcher_profiles.json"), // Launcher Mojang (old)
-			path.join(
-				process.env.APPDATA,
-				".minecraft",
-				"launcher_profiles_microsoft_store.json"
-			), // Launcher Microsoft (new)
+
+		const jsonProfiles = [
+			"launcher_profiles.json", // Launcher Mojang (old)
+			"launcher_profiles_microsoft_store.json", // Launcher Microsoft (new)
 		];
 
-		for (let y; y < jsonFilesPath.length; y++) {
-			if (fs.existsSync(jsonFilesPath[y])) {
-				const readder = fs.readFileSync(jsonFilesPath[y]);
+		jsonProfiles.forEach((jsonProfile) => {
+			const theoreticalPath = path.join(
+				process.env.APPDATA,
+				".minecraft",
+				jsonProfile
+			);
+			if (fs.existsSync(theoreticalPath)) {
+				const data = JSON.parse(fs.readFileSync(theoreticalPath));
+				const profileObj = profile;
 
-				const jsonObj = JSON.parse(readder);
+				profileObj.gameDir = urancityPath;
+				data.profiles.urancity = profileObj;
 
-				Object.defineProperty(jsonObj.profiles, "urancity", {
-					value: JSON.parse(profile),
-				});
-
-				fs.writeFileSync(jsonFilesPath[y], JSON.stringify(jsonObj));
+				fs.writeFileSync(theoreticalPath, JSON.stringify(data, null, 2));
 				existJson = true;
 			}
-			cliBar.update((y / jsonFilesPath) * 100);
-		}
-
-		if (!existJson) error("Aucun launcher reconnu...");
+		});
 		cliBar.update(100);
+
+		if (!existJson)
+			error(
+				" Aucun launcher reconnu...\n Merci de relancer le programme en ayant lancé Minecraft au moins 1 fois."
+			);
 	} catch (err) {
 		error(err);
-	};
+	}
 
-	setTimeout(function () {
-		console.log(" ");
-		process.exit();
-	}, 10000);
+	rl.question(
+		'\n Appuyez sur "Entrée" pour quitter l\'installation...',
+		function () {
+			process.exit();
+		}
+	);
 })();
 
-function error(err) {
-	console.error(` \n ` + err);
-	process.exit();
-};
+async function error(err) {
+	await console.error(" \n " + err + "\n");
+	rl.question(
+		'Appuyez sur "Entrée" pour quitter l\'installation...',
+		function () {
+			process.exit();
+		}
+	);
+}
