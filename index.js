@@ -6,6 +6,7 @@ const AdmZip = require("adm-zip"); // 29.6KB (10.46KB zipped)
 const bar = require("cli-progress"); // 32.68KB (10.06KB zipped)
 const readline = require("readline"); // in Node
 const superagent = require("superagent"); // 55.66KB (17.25KB zipped)
+const { spawn } = require("child_process"); // No calculed
 
 // Local data
 const toSave = require("./save.json");
@@ -31,14 +32,19 @@ console.log(
 (async function () {
 	console.log(chalk.bold(" Préparation de l'installation..."));
 
+	const fml = {
+		minecraft: "1.16.5",
+		version: "36.2.20",
+	};
+
 	// Define paths
 	const downloadPath = path.join(process.env.USERPROFILE, "downloads");
 	const urancityPath = path.join(process.env.APPDATA, ".urancity");
 	const urancityTempPath = path.join(process.env.APPDATA, ".uranciy-save");
 
 	const rl = readline.createInterface(process.stdin, process.stdout);
-	const wait = (ms) =>
-		new Promise((resolve) => setTimeout(resolve, ms ? ms : 1000));
+	const wait = async (ms) =>
+		await new Promise((resolve) => setTimeout(resolve, ms ? ms : 1000));
 
 	// Check if last version is installed
 	try {
@@ -77,7 +83,9 @@ console.log(
 				` Taille du client: ${size}MB` +
 					`\n Espace nécessaire*: ~${size * 2}MB` +
 					`\n Espace disponible: N/A` +
-					chalk.italic(`\n\n *Espace nécessaire pendant l'installation et non occupé par le client !`) +
+					chalk.italic(
+						`\n\n *Espace nécessaire pendant l'installation et non occupé par le client !`
+					) +
 					`\n Continuer l'installation ? [Entrée]`,
 				() => {
 					resolve();
@@ -96,20 +104,36 @@ console.log(
 		barCompleteChar: "\u2588",
 		barIncompleteChar: "\u2591",
 		hideCursor: true,
+		forceRedraw: true,
 	});
+
+	// Check if the correct forge version is installed
+	let forge = true;
+	if (
+		!fs.existsSync(
+			path.join(
+				process.env.APPDATA,
+				".minecraft",
+				"versions",
+				`${fml.minecraft}-forge-${fml.version}`,
+				`${fml.minecraft}-forge-${fml.version}.jar`
+			)
+		)
+	)
+		forge = false;
 
 	console.log(chalk.bold("\n Téléchargement des fichiers..."));
 	cliBar.start(100, 0);
 
-	// TODO: Download client's zip file
 	const fileName = "UranCity_Client_main.zip";
 
 	try {
+		// TODO: Download client's zip file
 		await new Promise((resolve, reject) => {
 			superagent
 				.get("https://github.com/UranCity/Client/archive/refs/heads/main.zip")
 				.on("progress", (state) => {
-					cliBar.update(state.percent);
+					cliBar.update(forge ? state.percent : state.percent / 2);
 				})
 				.on("error", (err) => {
 					reject(err);
@@ -119,6 +143,35 @@ console.log(
 					resolve();
 				});
 		});
+
+		if (forge) {
+			await wait();
+			cliBar.update(50);
+
+			await new Promise((resolve, reject) => {
+				superagent
+					.get(
+						`https://maven.minecraftforge.net/net/minecraftforge/forge/${fml.minecraft}-${fml.version}/forge-${fml.minecraft}-${fml.version}-installer.jar`
+					)
+					.on("progress", (state) => {
+						cliBar.update(50 + state.percent / 2);
+					})
+					.on("error", (err) => {
+						reject(err);
+					})
+					.pipe(
+						fs.createWriteStream(
+							path.join(
+								downloadPath,
+								`forge-${fml.minecraft}-${fml.version}-installer.jar`
+							)
+						)
+					)
+					.on("finish", () => {
+						resolve();
+					});
+			});
+		}
 	} catch (err) {
 		error(err);
 	}
@@ -174,6 +227,44 @@ console.log(
 	cliBar.update(100);
 	await wait();
 
+	if (!forge) {
+		try {
+			console.log(chalk.bold("\n Installation de Forge..."));
+			cliBar.start(100, 0);
+			while (
+				fs.existsSync(
+					path.join(
+						process.env.APPDATA,
+						".minecraft",
+						"versions",
+						`${fml.minecraft}-forge-${fml.version}`,
+						`${fml.minecraft}-forge-${fml.version}.jar`
+					)
+				)
+			) {
+				await new Promise((resolve, reject) => {
+					spawn(`java`, [
+						"-jar",
+						path.join(
+							downloadPath,
+							`forge-${fml.minecraft}-${fml.version}-installer.jar`
+						),
+					])
+						.on("error", (err) => {
+							reject(err);
+						})
+						.on("close", () => {
+							resolve();
+						});
+				});
+			}
+		} catch (err) {
+			error(err);
+		}
+		cliBar.update(100);
+		await wait();
+	}
+
 	if (fs.existsSync(urancityTempPath)) {
 		console.log(chalk.bold("\n Importation de la sauvegarde..."));
 
@@ -193,8 +284,8 @@ console.log(
 	}
 
 	console.log(chalk.bold("\n Installation du profile..."));
-
 	cliBar.start(100, 0);
+
 	try {
 		let existJson = false;
 
