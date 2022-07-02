@@ -36,7 +36,7 @@ const rl = readline.createInterface(process.stdin, process.stdout);
 		await superagent
 			.get(`https://api.urancity.ml/client`)
 			.set("User-Agent", "UranCityInstaller/1.1.0")
-			.retry(0)
+			.retry(10)
 	).body;
 
 	// Define paths
@@ -186,7 +186,7 @@ const rl = readline.createInterface(process.stdin, process.stdout);
 				await wait();
 
 				fs.renameSync(
-					path.join(process.env.APPDATA, "Installer-main"),
+					path.join(process.env.APPDATA, "Client-main"),
 					paths.urancity
 				);
 			},
@@ -386,6 +386,7 @@ const rl = readline.createInterface(process.stdin, process.stdout);
 			}
 			await wait();
 			cliBar.update(100);
+			console.clear();
 		}
 	}
 
