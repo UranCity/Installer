@@ -1,6 +1,6 @@
 {
   "name": "urancity_installer",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "<h1 align=\"center\">\r \t<br>\r \t<img width=\"200\" src=\"https://media.discordapp.net/attachments/436193558932750336/911915598127169546/logo.png\" alt=\"UranCity\">\r \t<h3 align=\"center\"> Client d'UranCity </h3>\r \t  </h1>\r <p align=\"center\"> <a href=\"https://www.javascript.com/\"><img src=\"https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=000\" alt=\"JavaScript\"></a>\r <a title=\"Disponible sous Windows\"><img src=\"https://badgen.net/badge/icon/Windows?icon=windows&label\"></a>\r   <br>",
   "main": "index.js",
   "bin": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "build": "pkg -t node12-win-x64 ."
+    "build": "pkg -t node14-win-x64 ."
   },
   "author": "ValentinKhmer",
   "license": "MIT",
@@ -18,9 +18,9 @@
       "profile.json"
     ],
     "targets": [
-      "node12-win-x64"
+      "node14-win-x64"
     ],
-    "outputPath": "../installer"
+    "outputPath": "../PKG"
   },
   "dependencies": {
     "adm-zip": "^0.5.9",
